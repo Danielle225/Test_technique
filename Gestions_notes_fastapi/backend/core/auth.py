@@ -1,4 +1,3 @@
-# auth/dependencies.py (ou votre fichier d'authentification)
 import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, OAuth2PasswordBearer
@@ -6,7 +5,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from database.database import get_db
 from models.utilisateurs import Utilisateur
-from utils.security import SECRET_KEY, ALGORITHM  # Importer depuis utils/security.py
+from utils.security import SECRET_KEY, ALGORITHM  
 
 security = HTTPBearer()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
