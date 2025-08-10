@@ -1,13 +1,14 @@
 # auth/dependencies.py (ou votre fichier d'authentification)
 import os
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from database.database import get_db
 from models.utilisateurs import Utilisateur
 from utils.security import SECRET_KEY, ALGORITHM  # Importer depuis utils/security.py
 
+security = HTTPBearer()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Utilisateur:
@@ -18,6 +19,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     
     try:
+        token = credentials_exception.headers.get("Authorization", token)
         print(f"Token reçu: {token[:20]}...")  # Debug
         print(f"Utilisation SECRET_KEY: {SECRET_KEY[:10]}...")  # Debug
         

@@ -1,7 +1,10 @@
+import random
+from tokenize import generate_tokens
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database.database import Base
+
 
 class Note(Base):
     __tablename__ = "notes"
@@ -21,9 +24,11 @@ class Note(Base):
 
     def generate_public_token(self):
         if self.visibilite == "public":
-            self.token_publique = int(func.random() * 1000000)  # Génère un token aléatoire
+            self.token_publique = str(random.randint(100000, 999999))  # Fonction pour générer un token unique
         else:
             self.token_publique = None
+            
+    
 
     def __repr__(self):
         return f"<Note(id={self.id}, titre='{self.titre}', owner_id={self.owner_id})>"
