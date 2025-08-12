@@ -8,15 +8,13 @@ class PartageNote(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
-    utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id", ondelete="CASCADE"), nullable=False)  # Propriétaire de la note
-    partage_avec_utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id", ondelete="CASCADE"), nullable=False)  # Utilisateur avec qui on partage
+    utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id", ondelete="CASCADE"), nullable=False) 
+    partage_avec_utilisateur_id = Column(Integer, ForeignKey("utilisateurs.id", ondelete="CASCADE"), nullable=False)  
     
-    # Permissions (optionnel)
-    permission = Column(String(50), default="read")  # "read", "write", "admin"
+    permission = Column(String(50), default="read") 
     
     date_partage = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Relations
     note = relationship("Note", back_populates="partages")
     utilisateur_proprietaire = relationship(
         "Utilisateur", 

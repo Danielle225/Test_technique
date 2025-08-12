@@ -1,4 +1,3 @@
-# routers/notes_router.py - Version simplifiée
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
 from sqlalchemy.orm import Session
@@ -50,14 +49,12 @@ def search_notes(
 
 @router.get("/notes/filter/visibility/{visibilite}", response_model=List[NoteResponse])
 def filter_by_visibility(
-    visibilite: str,  # CORRECTION: Paramètre simple sans Query()
+    visibilite: str,  
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_user)
 ):
-    """Filtrer mes notes par visibilité"""
-    # Validation manuelle
     if visibilite not in ["prive", "public"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -70,7 +67,7 @@ def filter_by_visibility(
 
 @router.get("/notes/filter/tag/{tag_nom}", response_model=List[NoteResponse])
 def filter_by_tag(
-    tag_nom: str,  # CORRECTION: Paramètre simple sans Query()
+    tag_nom: str,  
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -98,10 +95,9 @@ def get_public_note(
     
     return note
 
-# Endpoints avec ID - À la fin pour éviter les conflits
 @router.get("/notes/{note_id}", response_model=NoteResponse)
 def get_note(
-    note_id: int,  # CORRECTION: Paramètre simple
+    note_id: int,  
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_user)
 ):
@@ -115,7 +111,7 @@ def get_note(
 
 @router.put("/notes/{note_id}", response_model=NoteResponse)
 def update_note(
-    note_id: int,  # CORRECTION: Paramètre simple
+    note_id: int,  
     note_data: NoteUpdate,
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_user)
@@ -130,7 +126,7 @@ def update_note(
 
 @router.delete("/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_note(
-    note_id: int,  # CORRECTION: Paramètre simple
+    note_id: int,  
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_user)
 ):

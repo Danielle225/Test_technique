@@ -1,4 +1,3 @@
-# services/auth_service.py - Version simple avec votre fonction actuelle
 from datetime import timedelta
 from config import settings
 from models.utilisateurs import Utilisateur
@@ -24,14 +23,9 @@ class AuthService:
 
         utilisateur = self.utilisateur_repository.create_user(user_data)
 
-        # CORRECTION: Utiliser votre fonction actuelle avec le bon format
-        access_token = create_access_token(
-            data={"sub": str(utilisateur.id)}  # Format correct pour votre fonction
-        )
+   
         
         return {
-            "access_token": access_token,
-            "token_type": "bearer",
             "user": {
                 "id": utilisateur.id,
                 "email": utilisateur.email,
@@ -48,9 +42,8 @@ class AuthService:
         if not self.utilisateur_repository.is_active(utilisateur):
             raise ValueError("Utilisateur inactif.")
 
-        # CORRECTION: Utiliser votre fonction actuelle avec le bon format
         access_token = create_access_token(
-            data={"sub": str(utilisateur.id)}  # Format correct pour votre fonction
+            data={"sub": str(utilisateur.id)}  
         )
         
         return {

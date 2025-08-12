@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from core.auth import get_current_user
 from database.database import get_db
+from models.utilisateurs import Utilisateur
 from schemas.auth_schema import LoginRequest, Token
 from schemas.utilisateur_schema import UserCreate, UserResponse
 from services.auth_service import AuthService
@@ -44,4 +46,16 @@ def login(
 def logout():
    
     return {"message": "Déconnexion réussie. Supprimez le token côté client."}
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user_info(
+    current_user: Utilisateur = Depends(get_current_user)
+):
+    """Récupérer les informations de l'utilisateur connecté"""
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "date_creation": current_user.date_creation,
+        "est_actif": current_user.est_actif
+    }
 

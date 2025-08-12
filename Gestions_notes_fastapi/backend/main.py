@@ -21,7 +21,6 @@ def custom_openapi(app: FastAPI):
         routes=app.routes,
     )
     
-    # Ajout du schéma de sécurité Bearer
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -30,6 +29,7 @@ def custom_openapi(app: FastAPI):
             "description": "Entrez le token JWT"
         }
     }
+    openapi_schema["security"] = [{"BearerAuth": []}] 
     
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -51,16 +51,15 @@ def create_application() -> FastAPI:
         ]
     )
 
-    # Configuration CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins, 
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["POST","GET", "PUT", "DELETE"],
         allow_headers=["*"],
+        expose_headers=["*"]
     )
 
-    # Inclusion des routeurs
     app.include_router(
         auth_router.router, 
         prefix="/api/v1/auth", 
@@ -82,12 +81,10 @@ def create_application() -> FastAPI:
         tags=["Sharing"]
     )
 
-    # Configuration OpenAPI personnalisée
     app.openapi = lambda: custom_openapi(app)
 
     return app
 
-# Création de l'application
 app = create_application()
 
 
@@ -113,7 +110,7 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    print(f"🚀 Démarrage du serveur en mode {'développement' if settings.debug else 'production'}")
+    print(f" Démarrage du serveur en mode {'développement' if settings.debug else 'production'}")
     
     uvicorn.run(
         "main:app",  
