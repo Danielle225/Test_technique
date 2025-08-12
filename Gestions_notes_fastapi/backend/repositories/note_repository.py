@@ -12,10 +12,23 @@ class NoteRepository(BaseRepository[Note, NoteCreate, NoteUpdate]):
         super().__init__(Note, db)
 
     def get_user_notes(self, utilisateur_id: int, skip: int = 0, limit: int = 100) -> List[Note]:
-        return (
+        """
+        Récupère toutes les notes accessibles à un utilisateur :
+        - Ses propres notes (owner_id == utilisateur_id)
+        - Les notes partagées avec lui (via PartageNote)
+        """
+        
+        return  (
             self.db.query(Note)
             .options(joinedload(Note.tags))
-            .filter(Note.owner_id == utilisateur_id)
+            .outerjoin(PartageNote, Note.id == PartageNote.note_id)
+            .filter(
+                or_(
+                    Note.owner_id == utilisateur_id,
+                    PartageNote.partage_avec_utilisateur_id == utilisateur_id
+                )
+            )
+            .distinct()  # Important pour éviter les doublons
             .order_by(Note.date_modification.desc())
             .offset(skip)
             .limit(limit)
