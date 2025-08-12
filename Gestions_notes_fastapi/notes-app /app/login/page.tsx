@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { useApiError } from "@/hooks/useApiError"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const clearStorage = () => {
+    localStorage.clear()
+    window.location.reload()
   }
 
   return (
@@ -84,11 +90,25 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
+
+            {/* Bouton de debug pour nettoyer le localStorage */}
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              onClick={clearStorage}
+            >
+              🧹 Nettoyer le cache (Debug)
+            </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Environnement de développement</p>
-            <p className="text-xs mt-1">API: {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}</p>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Pas encore de compte ?{" "}
+              <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                Créer un compte
+              </Link>
+            </p>
           </div>
         </CardContent>
       </Card>

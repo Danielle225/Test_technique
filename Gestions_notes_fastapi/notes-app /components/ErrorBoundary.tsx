@@ -33,7 +33,11 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-center max-w-md">
             <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Oups ! Une erreur est survenue</h1>
-            <p className="text-gray-600 mb-6">{this.state.error?.message || "Une erreur inattendue s'est produite."}</p>
+            <p className="text-gray-600 mb-6">
+              {typeof this.state.error?.message === 'string' 
+                ? this.state.error.message 
+                : "Une erreur inattendue s'est produite."}
+            </p>
             <Button onClick={() => window.location.reload()} className="mr-2">
               Recharger la page
             </Button>

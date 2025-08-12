@@ -18,14 +18,14 @@ export function Navbar() {
 
         {user && (
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600 hidden sm:block">Bonjour, {user.name}</span>
+            <span className="text-sm text-gray-600 hidden sm:block">Bonjour, {user.email}</span>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src="/placeholder.svg" alt={user.email} />
+                    <AvatarFallback>{user.email.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

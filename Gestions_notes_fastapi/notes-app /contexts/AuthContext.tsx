@@ -1,9 +1,9 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { User, AuthContextType } from "@/types"
-import { AuthService } from "@/services/auth.service"
-import { AuthStorage } from "@/lib/auth-storage"
+import type { User, AuthContextType } from "../types"
+import { AuthService } from "../services/auth.service"
+import { AuthStorage } from "../lib/auth-storage"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -22,26 +22,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const initializeAuth = async () => {
     try {
+      setLoading(true)
+      
+      // Vérifier si on a des données stockées
       const storedToken = AuthStorage.getToken()
       const storedUser = AuthStorage.getUser()
-
+      
       if (storedToken && storedUser) {
+        console.log("✅ Données d'authentification trouvées:", { token: storedToken.substring(0, 20) + '...', user: storedUser })
         setToken(storedToken)
         setUser(storedUser)
-
-        // Vérifier si le token est toujours valide en appelant l'API
-        try {
-          const currentUser = await AuthService.getCurrentUser()
-          setUser(currentUser)
-          AuthStorage.setUser(currentUser)
-        } catch (error) {
-          console.error("Token invalide, déconnexion:", error)
-          await logout()
-        }
+      } else {
+        console.log("ℹ️ Aucune données d'authentification trouvées")
       }
     } catch (error) {
-      console.error("Erreur lors de l'initialisation de l'authentification:", error)
-      await logout()
+      console.error("❌ Erreur lors de l'initialisation:", error)
+      // En cas d'erreur, nettoyer les données corrompues
+      AuthStorage.clearAll()
     } finally {
       setLoading(false)
     }
@@ -50,9 +47,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       const response = await AuthService.login(email, password)
-      setUser(response.user)
+      
+      // Validation stricte de la structure utilisateur
+      const safeUser: User = {
+        id: String(response.user?.id || Date.now()),
+        email: String(response.user?.email || email),
+      }
+      
+      console.log("✅ Utilisateur sécurisé créé:", safeUser)
+      console.log("✅ Token reçu:", response.token.substring(0, 20) + '...')
+      
+      // Sauvegarder dans le localStorage
+      AuthStorage.setToken(response.token)
+      AuthStorage.setUser(safeUser)
+      
+      // Mettre à jour l'état local
+      setUser(safeUser)
       setToken(response.token)
+      
+      console.log("✅ Login réussi et données sauvegardées")
     } catch (error) {
+      console.error("❌ Erreur lors du login:", error)
       throw error
     }
   }
@@ -63,8 +78,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
     } finally {
+      // Nettoyer le localStorage et l'état
+      AuthStorage.clearAll()
       setUser(null)
       setToken(null)
+      console.log("✅ Déconnexion réussie et données nettoyées")
     }
   }
 

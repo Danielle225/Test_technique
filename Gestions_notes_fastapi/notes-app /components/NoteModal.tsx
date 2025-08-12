@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import type { Note } from "@/types"
+import type { Note, Tag } from "@/types"
 import { useAuth } from "@/contexts/AuthContext"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import { X } from "lucide-react"
 interface NoteModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (note: Omit<Note, "id" | "createdAt" | "updatedAt">) => void
+  onSave: (note: Omit<Note, "id" | "date_creation" | "date_modification" | "utilisateur_id">) => void
   onUpdate?: (id: string, updates: Partial<Note>) => void
   note?: Note | null
 }
@@ -27,8 +27,8 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
   const [formData, setFormData] = useState({
     titre: "",
     contenu: "",
-    status: "todo" as Note["status"],
-    tags: [] as string[],
+    visibilite: "prive" as Note["visibilite"],
+    tags: [] as Tag[],
   })
   const [tagInput, setTagInput] = useState("")
 
@@ -37,14 +37,14 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
       setFormData({
         titre: note.titre,
         contenu: note.contenu,
-        status: note.status,
+        visibilite: note.visibilite,
         tags: note.tags,
       })
     } else {
       setFormData({
         titre: "",
         contenu: "",
-        status: "todo",
+        visibilite: "prive",
         tags: [],
       })
     }
@@ -53,14 +53,13 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title.trim() || !user) return
+    if (!formData.titre.trim() || !user) return
 
     if (note && onUpdate) {
       onUpdate(note.id, formData)
     } else {
       onSave({
         ...formData,
-        author: user.name,
       })
     }
 
@@ -68,10 +67,17 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
   }
 
   const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+    const trimmed = tagInput.trim()
+    if (
+      trimmed &&
+      !formData.tags.some((tag) => tag.nom === trimmed)
+    ) {
       setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()],
+        tags: [
+          ...prev.tags,
+          { id: Math.random().toString(36).substr(2, 9), nom: trimmed },
+        ],
       }))
       setTagInput("")
     }
@@ -80,7 +86,7 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
   const removeTag = (tagToRemove: string) => {
     setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
+      tags: prev.tags.filter((tag) => tag.nom !== tagToRemove),
     }))
   }
 
@@ -94,29 +100,29 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Titre *</Label>
+              <Label htmlFor="titre">Titre *</Label>
               <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                id="titre"
+                value={formData.titre}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titre: e.target.value }))}
                 placeholder="Titre de la note"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Statut</Label>
+              <Label htmlFor="visibilite">Visibilité</Label>
               <Select
-                value={formData.status}
-                onValueChange={(value: Note["status"]) => setFormData((prev) => ({ ...prev, status: value }))}
+                value={formData.visibilite}
+                onValueChange={(value: Note["visibilite"]) => setFormData((prev) => ({ ...prev, visibilite: value }))}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">À faire</SelectItem>
-                  <SelectItem value="in-progress">En cours</SelectItem>
-                  <SelectItem value="completed">Terminé</SelectItem>
+                  <SelectItem value="prive">Privé</SelectItem>
+                  <SelectItem value="partage">Partagé</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -138,9 +144,9 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                    {tag}
-                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag)} />
+                  <Badge key={tag.id} variant="secondary" className="flex items-center gap-1">
+                    {tag.nom}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag.nom)} />
                   </Badge>
                 ))}
               </div>
@@ -148,10 +154,10 @@ export function NoteModal({ isOpen, onClose, onSave, onUpdate, note }: NoteModal
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="content">Contenu</Label>
+            <Label htmlFor="contenu">Contenu</Label>
             <MarkdownEditor
-              value={formData.content}
-              onChange={(content) => setFormData((prev) => ({ ...prev, content }))}
+              value={formData.contenu}
+              onChange={(contenu) => setFormData((prev) => ({ ...prev, contenu }))}
             />
           </div>
 

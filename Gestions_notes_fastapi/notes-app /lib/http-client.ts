@@ -1,5 +1,6 @@
 import type { ApiError } from "@/types"
 import { API_CONFIG, DEFAULT_HEADERS } from "./config"
+import { AuthStorage } from "./auth-storage"
 
 class HttpClient {
   private baseURL: string
@@ -9,10 +10,11 @@ class HttpClient {
     this.baseURL = API_CONFIG.BASE_URL
     this.defaultHeaders = DEFAULT_HEADERS
   }
+  
 
   private getAuthToken(): string | null {
     if (typeof window === "undefined") return null
-    return localStorage.getItem("auth_token")
+    return AuthStorage.getToken()
   }
 
   private getHeaders(customHeaders?: Record<string, string>): Record<string, string> {
@@ -21,28 +23,49 @@ class HttpClient {
 
     if (token) {
       headers.Authorization = `Bearer ${token}`
+      console.log('Using auth token:', token.substring(0, 20) + '...')
+    } else {
+      console.log('No auth token found')
     }
 
     return headers
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      let errorData: any
-
+    const contentType = response.headers.get("content-type")
+    let responseData: any = null
+    
+    // Essayer de parser le JSON si possible
+    if (contentType && contentType.includes("application/json")) {
       try {
-        errorData = await response.json()
-      } catch {
-        errorData = { message: "Une erreur est survenue" }
+        responseData = await response.json()
+        console.log("📄 Response Data:", responseData)
+      } catch (error) {
+        console.warn("Failed to parse JSON response:", error)
       }
+    }
 
+    if (!response.ok) {
+      // Structure d'erreur FastAPI standard
+      const errorMessage = responseData?.detail || 
+                          responseData?.message || 
+                          `Erreur HTTP ${response.status}: ${response.statusText}`
+      
       const apiError: ApiError = {
-        message: errorData.message || `Erreur ${response.status}`,
+        message: errorMessage,
         status: response.status,
-        errors: errorData.errors,
+        errors: responseData?.errors || responseData,
+        response: {
+          data: responseData,
+          status: response.status,
+          statusText: response.statusText
+        }
       }
 
+      console.error("❌ API Error:", apiError)
+      // Note: Toast notifications should be handled in the components that use the API
       throw apiError
+
     }
 
     // Gérer les réponses vides (204 No Content)
@@ -50,11 +73,8 @@ class HttpClient {
       return {} as T
     }
 
-    try {
-      return await response.json()
-    } catch {
-      return {} as T
-    }
+    // Retourner les données si elles existent, sinon un objet vide
+    return responseData || ({} as T)
   }
 
   async get<T>(endpoint: string, customHeaders?: Record<string, string>): Promise<T> {
@@ -67,10 +87,39 @@ class HttpClient {
   }
 
   async post<T>(endpoint: string, data?: any, customHeaders?: Record<string, string>): Promise<T> {
+    // Debug logging
+    console.log("🌐 POST Request:", {
+      url: `${this.baseURL}${endpoint}`,
+      data: data,
+      headers: this.getHeaders(customHeaders)
+    })
+
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "POST",
       headers: this.getHeaders(customHeaders),
       body: data ? JSON.stringify(data) : undefined,
+    })
+
+    // Debug response
+    console.log("📥 Response:", {
+      status: response.status,
+      message: response.statusText,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    })
+
+    return this.handleResponse<T>(response)
+  }
+
+  async postForm<T>(endpoint: string, formData: URLSearchParams | FormData, customHeaders?: Record<string, string>): Promise<T> {
+    // Pour form data, ne pas inclure Content-Type (let fetch set it automatically)
+    const headers = this.getHeaders(customHeaders)
+    delete headers["Content-Type"]
+    
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: "POST",
+      headers: headers,
+      body: formData,
     })
 
     return this.handleResponse<T>(response)
@@ -107,3 +156,6 @@ class HttpClient {
 }
 
 export const httpClient = new HttpClient()
+
+
+

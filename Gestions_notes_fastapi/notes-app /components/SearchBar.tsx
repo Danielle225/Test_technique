@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, Filter, X } from "lucide-react"
-import type { NotesFilters } from "@/types"
+import type { NotesFilters, Tag } from "@/types"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,21 +22,21 @@ export function SearchBar({ filters, onFiltersChange }: SearchBarProps) {
     onFiltersChange({ ...filters, search: value })
   }
 
-  const handleStatusChange = (status: string) => {
-    onFiltersChange({ ...filters, status })
-  }
+  const handleStatusChange = (visibilite: "all" | "prive" | "partage" | "public") => {
+  onFiltersChange({ ...filters, visibilite })
+}
 
-  const addTag = () => {
-    if (tagInput.trim() && !filters.tags.includes(tagInput.trim())) {
-      onFiltersChange({
-        ...filters,
-        tags: [...filters.tags, tagInput.trim()],
-      })
-      setTagInput("")
-    }
+const addTag = () => {
+  if (tagInput.trim() && !filters.tags.includes(tagInput.trim() as unknown as Tag)) {
+    onFiltersChange({
+      ...filters,
+      tags: [...filters.tags, tagInput.trim() as unknown as Tag],
+    })
+    setTagInput("")
   }
+}
 
-  const removeTag = (tagToRemove: string) => {
+  const removeTag = (tagToRemove: Tag) => {
     onFiltersChange({
       ...filters,
       tags: filters.tags.filter((tag) => tag !== tagToRemove),
@@ -46,7 +46,7 @@ export function SearchBar({ filters, onFiltersChange }: SearchBarProps) {
   const clearFilters = () => {
     onFiltersChange({
       search: "",
-      status: "all",
+      visibilite: "all",
       tags: [],
     })
   }
@@ -69,9 +69,9 @@ export function SearchBar({ filters, onFiltersChange }: SearchBarProps) {
             <Button variant="outline" className="flex items-center gap-2 bg-transparent">
               <Filter className="h-4 w-4" />
               Filtres
-              {(filters.tags.length > 0 || filters.status !== "all") && (
+              {(filters.tags.length > 0 || filters.visibilite !== "all") && (
                 <Badge variant="secondary" className="ml-1">
-                  {filters.tags.length + (filters.status !== "all" ? 1 : 0)}
+                  {filters.tags.length + (filters.visibilite !== "all" ? 1 : 0)}
                 </Badge>
               )}
             </Button>
@@ -79,16 +79,16 @@ export function SearchBar({ filters, onFiltersChange }: SearchBarProps) {
           <PopoverContent className="w-80">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="status">Statut</Label>
-                <Select value={filters.status} onValueChange={handleStatusChange}>
+                <Label htmlFor="visibilite">Visibilité</Label>
+                <Select value={filters.visibilite} onValueChange={handleStatusChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un statut" />
+                    <SelectValue placeholder="Sélectionner une visibilité" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous</SelectItem>
-                    <SelectItem value="todo">À faire</SelectItem>
-                    <SelectItem value="in-progress">En cours</SelectItem>
-                    <SelectItem value="completed">Terminé</SelectItem>
+                    <SelectItem value="public">{filters.visibilite === "public" ? "✓" : ""} Public</SelectItem>
+                    <SelectItem value="prive">{filters.visibilite === "prive" ? "✓" : ""} Privé</SelectItem>
+                    <SelectItem value="partage">{filters.visibilite === "partage" ? "✓" : ""} Partagé</SelectItem>
+                    <SelectItem value="all">{filters.visibilite === "all" ? "✓" : ""} Tous</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -111,8 +111,8 @@ export function SearchBar({ filters, onFiltersChange }: SearchBarProps) {
               {filters.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {filters.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                      {tag}
+                    <Badge key={tag.id} variant="secondary" className="flex items-center gap-1">
+                      {tag.nom}
                       <X className="h-3 w-3 cursor-pointer" onClick={() => removeTag(tag)} />
                     </Badge>
                   ))}

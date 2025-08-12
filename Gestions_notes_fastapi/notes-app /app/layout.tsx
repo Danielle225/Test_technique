@@ -6,6 +6,8 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { ToastProvider } from "@/contexts/ToastContext"
 import { ToastContainer } from "@/components/ToastContainer"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { DebugComponent } from "@/components/DebugComponent"
+import { ReactDebugger } from "@/components/ReactDebugger"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,6 +26,8 @@ export default function RootLayout({
     <html lang="fr">
       <body className={inter.className}>
         <ErrorBoundary>
+          <ReactDebugger />
+          <DebugComponent />
           <AuthProvider>
             <ToastProvider>
               {children}

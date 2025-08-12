@@ -6,33 +6,33 @@ import type { Note } from "@/types"
 
 interface StatusTabsProps {
   notes: Note[]
-  activeStatus: string
-  onStatusChange: (status: string) => void
+  activeVisibility: string
+  onVisibilityChange: (visibility: "all" | "prive" | "partage" | "public") => void
 }
 
-export function StatusTabs({ notes, activeStatus, onStatusChange }: StatusTabsProps) {
-  const statusCounts = {
+export function StatusTabs({ notes, activeVisibility, onVisibilityChange }: StatusTabsProps) {
+  const visibilityCounts = {
     all: notes.length,
-    todo: notes.filter((note) => note.status === "todo").length,
-    "in-progress": notes.filter((note) => note.status === "in-progress").length,
-    completed: notes.filter((note) => note.status === "completed").length,
+    prive: notes.filter((note) => note.visibilite === "prive").length,
+    partage: notes.filter((note) => note.visibilite === "partage").length,
+    public: notes.filter((note) => note.visibilite === "public").length,
   }
 
-  const statusLabels = {
+  const visibilityLabels = {
     all: "Toutes",
-    todo: "À faire",
-    "in-progress": "En cours",
-    completed: "Terminées",
+    prive: "Privées",
+    partage: "Partagées",
+    public: "Publiques",
   }
 
   return (
-    <Tabs value={activeStatus} onValueChange={onStatusChange} className="w-full">
+    <Tabs value={activeVisibility} onValueChange={onVisibilityChange} className="w-full">
       <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-        {Object.entries(statusLabels).map(([status, label]) => (
-          <TabsTrigger key={status} value={status} className="flex items-center gap-2">
+        {Object.entries(visibilityLabels).map(([visibility, label]) => (
+          <TabsTrigger key={visibility} value={visibility} className="flex items-center gap-2">
             {label}
             <Badge variant="secondary" className="text-xs">
-              {statusCounts[status as keyof typeof statusCounts]}
+              {visibilityCounts[visibility as keyof typeof visibilityCounts]}
             </Badge>
           </TabsTrigger>
         ))}

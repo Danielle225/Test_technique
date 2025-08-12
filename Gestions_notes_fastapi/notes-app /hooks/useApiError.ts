@@ -18,20 +18,20 @@ export function useApiError() {
         switch (apiError.status) {
           case 401:
             addToast({
-              type: "error",
+              type: "erreur",
               message: "Session expirée. Veuillez vous reconnecter.",
             })
             logout()
             break
           case 403:
             addToast({
-              type: "error",
+              type: "erreur",
               message: "Accès refusé. Vous n'avez pas les permissions nécessaires.",
             })
             break
           case 404:
             addToast({
-              type: "error",
+              type: "erreur",
               message: "Ressource non trouvée.",
             })
             break
@@ -40,35 +40,37 @@ export function useApiError() {
             if (apiError.errors) {
               Object.entries(apiError.errors).forEach(([field, messages]) => {
                 messages.forEach((message) => {
+                  // S'assurer que message est une string
+                  const messageStr = typeof message === 'string' ? message : JSON.stringify(message)
                   addToast({
-                    type: "error",
-                    message: `${field}: ${message}`,
+                    type: "erreur",
+                    message: `${field}: ${messageStr}`,
                   })
                 })
               })
             } else {
               addToast({
-                type: "error",
+                type: "erreur",
                 message: apiError.message,
               })
             }
             break
           case 500:
             addToast({
-              type: "error",
+              type: "erreur",
               message: "Erreur serveur. Veuillez réessayer plus tard.",
             })
             break
           default:
             addToast({
-              type: "error",
+              type: "erreur",
               message: apiError.message || "Une erreur est survenue",
             })
         }
       } else {
         // Erreur générique
         addToast({
-          type: "error",
+          type: "erreur",
           message: error.message || "Une erreur inattendue est survenue",
         })
       }

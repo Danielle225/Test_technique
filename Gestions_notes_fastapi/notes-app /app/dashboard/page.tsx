@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  const handleCreateNote = async (noteData: Omit<Note, "id" | "createdAt" | "updatedAt">) => {
+  const handleCreateNote = async (noteData: Omit<Note, "id" | "created_at" | "updated_at" | "utilisateur_id">) => {
     await createNote(noteData)
     setIsModalOpen(false)
   }
@@ -35,8 +35,8 @@ export default function DashboardPage() {
     setIsModalOpen(true)
   }
 
-  const handleStatusChange = async (id: string, status: Note["status"]) => {
-    await updateNote(id, { status })
+  const handleVisibilityChange = async (id: string, visibilite: Note["visibilite"]) => {
+    await updateNote(id, { visibilite })
   }
 
   const handleRefresh = async () => {
@@ -49,7 +49,7 @@ export default function DashboardPage() {
     setEditingNote(null)
     setIsModalOpen(true)
   }
-
+console.log('notes', notes)
   if (loading) {
     return (
       <ProtectedRoute>
@@ -96,25 +96,25 @@ export default function DashboardPage() {
             {/* Barre de recherche */}
             <SearchBar filters={filters} onFiltersChange={setFilters} />
 
-            {/* Onglets de statut */}
+            {/* Onglets de visibilité */}
             <StatusTabs
               notes={notes}
-              activeStatus={filters.status}
-              onStatusChange={(status) => setFilters({ ...filters, status })}
+              activeVisibility={filters.visibilite}
+              onVisibilityChange={(visibilite) => setFilters({ ...filters, visibilite })}
             />
 
             {/* Grille des notes */}
             {notes.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500 text-lg">
-                  {filters.search || filters.status !== "all" || filters.tags.length > 0
+                  {filters.search || filters.visibilite !== "all" || filters.tags.length > 0
                     ? "Aucune note ne correspond à vos critères de recherche."
                     : "Vous n'avez pas encore de notes. Créez votre première note !"}
                 </p>
-                {filters.search || filters.status !== "all" || filters.tags.length > 0 ? (
+                {filters.search || filters.visibilite !== "all" || filters.tags.length > 0 ? (
                   <Button
                     variant="outline"
-                    onClick={() => setFilters({ search: "", status: "all", tags: [] })}
+                    onClick={() => setFilters({ search: "", visibilite: "all", tags: [] })}
                     className="mt-4"
                   >
                     Effacer les filtres
@@ -134,7 +134,7 @@ export default function DashboardPage() {
                     note={note}
                     onEdit={handleEditNote}
                     onDelete={deleteNote}
-                    onStatusChange={handleStatusChange}
+                    onVisibilityChange={handleVisibilityChange}
                   />
                 ))}
               </div>
