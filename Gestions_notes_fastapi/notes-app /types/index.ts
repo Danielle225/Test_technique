@@ -1,4 +1,3 @@
-// Types pour l'authentification
 export interface User {
   id: string
   email: string
@@ -54,13 +53,25 @@ export interface NotesFilters {
 export interface ApiError {
   message: string
   status: number
+  code?: string  
   errors?: Record<string, string[]>
   response?: {
     data: any
     status: number
     statusText: string
   }
+  data?: {
+    note_id?: number
+    owner_id?: number
+    email?: string
+    target_email?: string
+    action?: string
+    error_details?: string
+    [key: string]: any
+  }
 }
+
+
 
 // Types pour les toasts
 export interface Toast {

@@ -25,67 +25,135 @@ export function debounce<T extends (...args: any[]) => any>(func: T, wait: numbe
   }
 }
 
-// Utilitaire pour formater les erreurs de validation
 export function formatValidationErrors(errors: Record<string, string[]>): string {
   return Object.entries(errors)
     .map(([field, messages]) => `${field}: ${messages.join(", ")}`)
     .join("\n")
 }
 
-// Utilitaire pour extraire les messages d'erreur de l'API
-export function getApiErrorMessage(error: any, fallbackMessage: string = "Une erreur est survenue"): string {
+export function extractApiError(error: any): {
+  status: string;
+  code: string;
+  message: string;
+  data?: any;
+} | null {
   console.error('Erreur API complète:', error)
   
-  // Si c'est une erreur structurée de notre HttpClient
-  if (error?.response?.data?.detail) {
-    return error.response.data.detail
+  const parseIfString = (value: any) => {
+    if (typeof value === 'string') {
+      try {
+        let normalizedJson = value
+        
+        normalizedJson = normalizedJson.replace(/'/g, '"')
+        
+        normalizedJson = normalizedJson.replace(/"message": "([^"]*)"([^"]*)"([^"]*)"/g, '"message": "$1\\"$2\\"$3"')
+        
+        normalizedJson = normalizedJson
+          .replace(/True/g, 'true')
+          .replace(/False/g, 'false')
+          .replace(/None/g, 'null')
+          
+        return JSON.parse(normalizedJson)
+      } catch {
+        try {
+          return JSON.parse(value)
+        } catch {
+          return null
+        }
+      }
+    }
+    return value
   }
+
+  if (error?.response?.data?.detail) {
+    const detail = parseIfString(error.response.data.detail)
+    if (detail && typeof detail === 'object' && detail.status && detail.code && detail.message) {
+      return detail
+    }
+  }
+
+  if (error?.detail) {
+    const detail = parseIfString(error.detail)
+    if (detail && typeof detail === 'object' && detail.status && detail.code && detail.message) {
+      return detail
+    }
+  }
+
+  if (error?.message) {
+    const message = parseIfString(error.message)
+    if (message && typeof message === 'object' && message.status && message.code && message.message) {
+      return message
+    }
+  }
+
+  return null
+}
+
+export function getApiErrorMessage(error: any, fallbackMessage: string = "Une erreur est survenue"): string {
+  console.log(' Extraction du message d\'erreur depuis:', error)
   
-  // FastAPI standard - detail direct
+  const structuredError = extractApiError(error)
+  if (structuredError) {
+    console.log('Message extrait de l\'erreur structurée:', structuredError.message)
+    return structuredError.message
+  }
+
+  if (error?.response?.data?.detail && typeof error.response.data.detail === 'string') {
+    if (error.response.data.detail.length < 200) {
+      return error.response.data.detail
+    }
+  }
+
+  if (error?.response?.data?.message && typeof error.response.data.message === 'string') {
+    return error.response.data.message
+  }
+
   if (error?.detail && typeof error.detail === 'string') {
     return error.detail
   }
-  
-  // Si c'est une erreur avec un message direct dans notre structure
+
   if (error?.message && typeof error.message === 'string') {
     return error.message
   }
-  
-  // Si c'est une erreur de validation FastAPI avec plusieurs champs
-  if (error?.response?.data?.errors) {
-    return formatValidationErrors(error.response.data.errors)
-  }
-  
-  // Erreur de validation directe
-  if (error?.errors && typeof error.errors === 'object') {
-    return formatValidationErrors(error.errors)
-  }
-  
-  // FastAPI validation errors format
+
   if (Array.isArray(error?.detail)) {
     return error.detail.map((item: any) => 
       `${item.loc?.join('.')}: ${item.msg}`
     ).join(', ')
   }
-  
+
+  if (error?.response?.data?.errors) {
+    return formatValidationErrors(error.response.data.errors)
+  }
+
   return fallbackMessage
 }
 
-// Utilitaire pour extraire les messages de succès de l'API
+export function getApiErrorCode(error: any): string | null {
+  const structuredError = extractApiError(error)
+  return structuredError?.code || null
+}
+
+export function getApiErrorData(error: any): any {
+  const structuredError = extractApiError(error)
+  return structuredError?.data || null
+}
+
+export function isStructuredApiError(error: any): boolean {
+  return extractApiError(error) !== null
+}
+
 export function getApiSuccessMessage(response: any, fallbackMessage: string = "Opération réussie"): string {
   console.log('Réponse API complète:', response)
   
-  // Message de succès direct
   if (response?.message && typeof response.message === 'string') {
     return response.message
   }
   
-  // Detail de succès
   if (response?.detail && typeof response.detail === 'string') {
     return response.detail
   }
   
-  // Success field
   if (response?.success && typeof response.success === 'string') {
     return response.success
   }
@@ -93,7 +161,6 @@ export function getApiSuccessMessage(response: any, fallbackMessage: string = "O
   return fallbackMessage
 }
 
-// Utilitaire pour gérer les paramètres d'URL
 export function buildQueryString(params: Record<string, any>): string {
   const searchParams = new URLSearchParams()
 

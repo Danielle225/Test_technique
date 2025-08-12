@@ -5,7 +5,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
-import { useApiError } from "@/hooks/useApiError"
+import { useToast } from "@/contexts/ToastContext"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,7 +19,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
-  const { handleError } = useApiError()
+  const { addToast } = useToast()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +30,10 @@ export default function LoginPage() {
       await login(email, password)
       router.push("/dashboard")
     } catch (error) {
-      handleError(error as any)
+      addToast({
+        type: "erreur",
+        message: getApiErrorMessage(error as any, "Erreur de connexion"),
+      })
     } finally {
       setLoading(false)
     }

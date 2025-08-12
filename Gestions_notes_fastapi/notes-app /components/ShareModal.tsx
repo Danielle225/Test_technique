@@ -24,7 +24,12 @@ import { Badge } from "@/components/ui/badge"
 import { Copy, Check, Share2, Globe, Users } from "lucide-react"
 import { SharingService } from "@/services/sharing.service"
 import { useToast } from "@/contexts/ToastContext"
-import { getApiErrorMessage, getApiSuccessMessage } from "@/lib/utils"
+import { 
+  getApiErrorMessage, 
+  getApiSuccessMessage, 
+  getApiErrorCode, 
+  isStructuredApiError 
+} from "@/lib/utils"
 
 interface ShareModalProps {
   isOpen: boolean
@@ -53,6 +58,7 @@ export function ShareModal({ isOpen, onClose, note }: ShareModalProps) {
 
     setIsLoading(true)
     try {
+      console.log('test ici ')
       const result = await SharingService.shareNoteWithUser(note.id, email.trim())
       addToast({
         type: "reussi",
@@ -63,7 +69,7 @@ export function ShareModal({ isOpen, onClose, note }: ShareModalProps) {
     } catch (error: any) {
       addToast({
         type: "erreur",
-        message: getApiErrorMessage(error, "Erreur lors du partage"),
+        message: getApiErrorMessage(error, "Erreur lors du partage de la note"),
       })
     } finally {
       setIsLoading(false)

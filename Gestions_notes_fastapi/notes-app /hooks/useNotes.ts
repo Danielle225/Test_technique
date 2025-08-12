@@ -5,8 +5,14 @@ import type { Note, NotesFilters, ApiError } from "@/types"
 import { NotesService } from "@/services/notes.service"
 import { SharingService } from "@/services/sharing.service"
 import { useToast } from "@/contexts/ToastContext"
-import { getApiErrorMessage } from "@/lib/utils"
-import { Tag } from "lucide-react"
+import { 
+  getApiErrorMessage, 
+  getApiErrorCode, 
+  getApiErrorData, 
+  extractApiError,
+  isStructuredApiError,
+  getApiSuccessMessage
+} from "@/lib/utils"
 
 export function useNotes() {
   const [notes, setNotes] = useState<Note[]>([])
@@ -37,7 +43,7 @@ export function useNotes() {
     }
   }
 
-  const createNote = async (noteData: Omit<Note, "id" | "created_at" | "updated_at" | "utilisateur_id">) => {
+  const createNote = async (noteData: Omit<Note, "id" | "date_creation" | "date_modification" | "utilisateur_id">) => {
     try {
       const newNote = await NotesService.createNote(noteData)
       setNotes((prev) => [newNote, ...prev])
@@ -91,27 +97,84 @@ export function useNotes() {
   }
   const shareNoteWithUser = async (noteId: string, userEmail: string) => {
     try {
-      await SharingService.shareNoteWithUser(noteId, userEmail)
+      const response = await SharingService.shareNoteWithUser(noteId, userEmail)
+      const successMessage = getApiSuccessMessage(response, "Note partagée avec succès")
       addToast({
         type: "reussi",
-        message: "Note partagée avec succès",
+        message: successMessage,
       })
     } catch (error: any) {
-      console.log('error', error)
-      addToast({
-        type: "erreur",
-        message: getApiErrorMessage(error, "Erreur lors du partage de la note"),
-      })
+      console.error('Erreur de partage:', error)
+      
+      if (isStructuredApiError(error)) {
+        const errorCode = getApiErrorCode(error)
+        const errorMessage = getApiErrorMessage(error)
+        const errorData = getApiErrorData(error)
+        
+        console.log('Code:', errorCode)
+        console.log('Message:', errorMessage)
+        console.log('Données:', errorData)
+        
+        switch (errorCode) {
+          case 'ALREADY_SHARED':
+            addToast({
+              type: "avertissement",
+              message: "Cette note est déjà partagée avec cet utilisateur",
+            })
+            break
+            
+          case 'USER_NOT_FOUND':
+            addToast({
+              type: "erreur",
+              message: `Aucun utilisateur trouvé avec l'email: ${errorData?.email || userEmail}`,
+            })
+            break
+            
+          case 'NOTE_NOT_FOUND':
+            addToast({
+              type: "erreur",
+              message: "Note non trouvée ou vous n'avez pas les droits",
+            })
+            break
+            
+          case 'SELF_SHARING_FORBIDDEN':
+            addToast({
+              type: "avertissement",
+              message: "Vous ne pouvez pas partager une note avec vous-même",
+            })
+            break
+            
+          case 'SHARE_CREATION_FAILED':
+            addToast({
+              type: "erreur",
+              message: `Erreur lors du partage: ${errorMessage}`,
+            })
+            break
+            
+          default:
+            addToast({
+              type: "erreur",
+              message: errorMessage,
+            })
+        }
+      } else {
+        const fallbackMessage = getApiErrorMessage(error, "Erreur de connexion")
+        addToast({
+          type: "erreur",
+          message: fallbackMessage,
+        })
+      }
       throw error
     }
   }
 
   const unshareNoteWithUser = async (noteId: string, userEmail: string) => {
     try {
-      await SharingService.unshareNoteWithUser(noteId, userEmail)
+      const response = await SharingService.unshareNoteWithUser(noteId, userEmail)
+      const successMessage = getApiSuccessMessage(response, "Partage supprimé avec succès")
       addToast({
         type: "reussi",
-        message: "Partage supprimé avec succès",
+        message: successMessage,
       })
     } catch (error: any) {
       addToast({
@@ -125,12 +188,12 @@ export function useNotes() {
   const createPublicLink = async (noteId: string) => {
     try {
       const result = await SharingService.createPublicLink(noteId)
+      const successMessage = getApiSuccessMessage(result, "Lien public créé avec succès")
       addToast({
         type: "reussi",
-        message: "Lien public créé avec succès",
+        message: successMessage,
       })
       
-      // Mettre à jour la note dans l'état local si possible
       setNotes((prev) => prev.map((note) => 
         note.id === noteId 
           ? { ...note, public_token: result.public_token }
@@ -139,23 +202,41 @@ export function useNotes() {
       
       return result
     } catch (error: any) {
-      addToast({
-        type: "erreur",
-        message: getApiErrorMessage(error, "Erreur lors de la création du lien public"),
-      })
+      const errorCode = getApiErrorCode(error)
+      const errorMessage = getApiErrorMessage(error)
+      
+      switch (errorCode) {
+        case 'NOTE_NOT_FOUND':
+          addToast({
+            type: "erreur",
+            message: "Note non trouvée",
+          })
+          break
+        case 'PUBLIC_LINK_CREATION_FAILED':
+          addToast({
+            type: "erreur",
+            message: "Erreur lors de la création du lien public",
+          })
+          break
+        default:
+          addToast({
+            type: "erreur",
+            message: getApiErrorMessage(error, "Erreur lors de la création du lien public"),
+          })
+      }
       throw error
     }
   }
 
   const revokePublicLink = async (noteId: string) => {
     try {
-      await SharingService.revokePublicLink(noteId)
+      const response = await SharingService.revokePublicLink(noteId)
+      const successMessage = getApiSuccessMessage(response, "Lien public révoqué avec succès")
       addToast({
         type: "reussi",
-        message: "Lien public révoqué avec succès",
+        message: successMessage,
       })
       
-      // Mettre à jour la note dans l'état local
       setNotes((prev) => prev.map((note) => 
         note.id === noteId 
           ? { ...note, public_token: undefined }
@@ -173,10 +254,6 @@ export function useNotes() {
   const getSharedWithMe = async () => {
     try {
       const sharedNotes = await SharingService.getSharedWithMe()
-      addToast({
-        type: "reussi",
-        message: "Notes partagées récupérées",
-      })
       return sharedNotes
     } catch (error: any) {
       addToast({
@@ -192,6 +269,7 @@ export function useNotes() {
       const shares = await SharingService.getNoteShares(noteId)
       return shares
     } catch (error: any) {
+      console.log("Erreur lors de la récupération des partages:", error)
       addToast({
         type: "erreur",
         message: getApiErrorMessage(error, "Erreur lors de la récupération des partages"),

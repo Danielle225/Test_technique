@@ -10,6 +10,19 @@ class HttpClient {
     this.baseURL = API_CONFIG.BASE_URL
     this.defaultHeaders = DEFAULT_HEADERS
   }
+
+  private redirectToLogin() {
+    // Vérifier si nous sommes côté client
+    if (typeof window !== "undefined") {
+      console.log("🔄 Token expiré - Redirection vers la page de login")
+      
+      // Nettoyer les données d'authentification
+      AuthStorage.clearAll()
+      
+      // Rediriger vers la page de login
+      window.location.href = "/login"
+    }
+  }
   
 
   private getAuthToken(): string | null {
@@ -35,45 +48,66 @@ class HttpClient {
     const contentType = response.headers.get("content-type")
     let responseData: any = null
     
-    // Essayer de parser le JSON si possible
     if (contentType && contentType.includes("application/json")) {
       try {
         responseData = await response.json()
-        console.log("📄 Response Data:", responseData)
       } catch (error) {
         console.warn("Failed to parse JSON response:", error)
       }
     }
 
     if (!response.ok) {
-      // Structure d'erreur FastAPI standard
       const errorMessage = responseData?.detail || 
                           responseData?.message || 
                           `Erreur HTTP ${response.status}: ${response.statusText}`
       
+      const errorCode = responseData?.code || 
+                       responseData?.error_code || 
+                       `HTTP_${response.status}`
+
+      // Gérer les erreurs d'authentification (token expiré)
+      if (response.status === 401) {
+        console.log("❌ Erreur 401 - Token d'authentification expiré ou invalide")
+        this.redirectToLogin()
+        
+        // Créer une erreur spéciale pour les 401
+        const authError: ApiError = {
+          message: "Votre session a expiré. Veuillez vous reconnecter.",
+          status: response.status,
+          code: "AUTHENTICATION_EXPIRED",
+          errors: responseData?.errors || responseData,
+          response: {
+            data: responseData,
+            status: response.status,
+            statusText: response.statusText
+          },
+          data: responseData?.data
+        }
+        throw authError
+      }
+      
       const apiError: ApiError = {
         message: errorMessage,
         status: response.status,
+        code: errorCode,
         errors: responseData?.errors || responseData,
         response: {
           data: responseData,
           status: response.status,
           statusText: response.statusText
-        }
+        },
+        data: responseData?.data
       }
 
-      console.error("❌ API Error:", apiError)
-      // Note: Toast notifications should be handled in the components that use the API
+      
       throw apiError
 
     }
 
-    // Gérer les réponses vides (204 No Content)
     if (response.status === 204) {
       return {} as T
     }
 
-    // Retourner les données si elles existent, sinon un objet vide
     return responseData || ({} as T)
   }
 
@@ -87,12 +121,7 @@ class HttpClient {
   }
 
   async post<T>(endpoint: string, data?: any, customHeaders?: Record<string, string>): Promise<T> {
-    // Debug logging
-    console.log("🌐 POST Request:", {
-      url: `${this.baseURL}${endpoint}`,
-      data: data,
-      headers: this.getHeaders(customHeaders)
-    })
+   
 
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: "POST",
@@ -100,19 +129,12 @@ class HttpClient {
       body: data ? JSON.stringify(data) : undefined,
     })
 
-    // Debug response
-    console.log("📥 Response:", {
-      status: response.status,
-      message: response.statusText,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
-    })
+ 
 
     return this.handleResponse<T>(response)
   }
 
   async postForm<T>(endpoint: string, formData: URLSearchParams | FormData, customHeaders?: Record<string, string>): Promise<T> {
-    // Pour form data, ne pas inclure Content-Type (let fetch set it automatically)
     const headers = this.getHeaders(customHeaders)
     delete headers["Content-Type"]
     

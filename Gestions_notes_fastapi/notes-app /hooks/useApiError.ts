@@ -12,7 +12,6 @@ export function useApiError() {
   const handleError = useCallback(
     (error: ApiError | Error) => {
       if ("status" in error) {
-        // C'est une ApiError
         const apiError = error as ApiError
 
         switch (apiError.status) {
@@ -36,11 +35,9 @@ export function useApiError() {
             })
             break
           case 422:
-            // Erreurs de validation
             if (apiError.errors) {
               Object.entries(apiError.errors).forEach(([field, messages]) => {
                 messages.forEach((message) => {
-                  // S'assurer que message est une string
                   const messageStr = typeof message === 'string' ? message : JSON.stringify(message)
                   addToast({
                     type: "erreur",
@@ -68,7 +65,6 @@ export function useApiError() {
             })
         }
       } else {
-        // Erreur générique
         addToast({
           type: "erreur",
           message: error.message || "Une erreur inattendue est survenue",

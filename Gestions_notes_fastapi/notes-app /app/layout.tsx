@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { ToastProvider } from "@/contexts/ToastContext"
 import { ToastContainer } from "@/components/ToastContainer"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { AuthErrorHandler } from "@/components/AuthErrorHandler"
 import { DebugComponent } from "@/components/DebugComponent"
 import { ReactDebugger } from "@/components/ReactDebugger"
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           <DebugComponent />
           <AuthProvider>
             <ToastProvider>
+              <AuthErrorHandler />
               {children}
               <ToastContainer />
             </ToastProvider>

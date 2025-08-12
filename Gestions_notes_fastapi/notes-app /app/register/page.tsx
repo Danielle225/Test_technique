@@ -5,8 +5,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AuthService } from "@/services/auth.service"
-import { useApiError } from "@/hooks/useApiError"
 import { useToast } from "@/contexts/ToastContext"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +20,6 @@ export default function RegisterPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { handleError } = useApiError()
   const { addToast } = useToast()
   const router = useRouter()
 
@@ -52,7 +51,10 @@ export default function RegisterPage() {
       
       router.push("/login")
     } catch (error) {
-      handleError(error as any)
+      addToast({
+        type: "erreur",
+        message: getApiErrorMessage(error as any, "Erreur lors de la création du compte"),
+      })
     } finally {
       setLoading(false)
     }
