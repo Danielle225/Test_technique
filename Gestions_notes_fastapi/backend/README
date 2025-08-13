@@ -1,0 +1,392 @@
+#  **Notes Management API - Backend**
+
+##  **Vue d'ensemble**
+
+API REST complète pour la gestion de notes avec authentification, partage et recherche avancée. Développée avec FastAPI, SQLAlchemy et SQLite.
+
+##  **Fonctionnalités principales**
+
+-  **Authentification JWT** sécurisée
+-  **CRUD complet** pour les notes (Markdown)
+-  **Système de tags** avancé
+-  **Partage privé** entre utilisateurs
+-  **Liens publics** avec tokens UUID
+-  **Recherche full-text** dans titre/contenu
+-  **Pagination** optimisée
+-  **Gestion d'erreurs** structurées
+
+---
+
+##  **Architecture**
+
+```
+backend/
+├── main.py                    # Point d'entrée FastAPI
+├── config.py                  # Configuration globale
+├── requirements.txt           # Dépendances Python
+├── notes.db                   # Base de données SQLite
+│
+├── core/
+│   ├── auth.py               # Authentification JWT
+│   ├── exceptions.py         # Exceptions personnalisées
+│   └── permissions.py        # Système de permissions
+│
+├── database/
+│   └── database.py           # Configuration SQLAlchemy
+│
+├── models/
+│   ├── utilisateurs.py       # Modèle User
+│   ├── notes.py              # Modèle Note
+│   ├── tag.py                # Modèle Tag
+│   └── partage_note.py       # Modèle PartageNote
+│
+├── repositories/
+│   ├── base.py               # Repository de base
+│   ├── note_repository.py    # CRUD Notes optimisé
+│   └── utilisateur_repository.py # CRUD Users
+│
+├── routers/
+│   ├── auth_router.py        # Authentification
+│   ├── note_router.py        # Gestion des notes
+│   ├── search_router.py      # Recherche avancée
+│   └── partage_router.py     # Partage et liens publics
+│
+├── schemas/
+│   ├── auth_schema.py        # Schémas d'authentification
+│   ├── utilisateur_schema.py # Schémas utilisateur
+│   └── note_schema.py        # Schémas de notes
+│
+└── services/
+    ├── auth_service.py       # Logique métier auth
+    ├── note_service.py       # Logique métier notes
+    └── partage_service.py    # Logique métier partage
+```
+
+---
+
+##  **Installation et démarrage**
+
+### **Prérequis**
+- Python 3.8+
+- pip ou poetry
+
+### **Installation**
+
+```bash
+# Cloner le repository
+git clone https://github.com/Danielle225/Test_technique.git/Gestions_notes_fastapi
+cd backend
+
+# Créer un environnement virtuel
+python -m venv venv
+source venv/bin/activate  
+
+# Installer les dépendances
+pip install -r requirements.txt
+
+# Copier le fichier de configuration
+cp .env.example .env
+```
+
+### **Configuration (.env)**
+
+```env
+APP_NAME=Notes Management API
+DEBUG=true
+ENVIRONMENT=development
+
+DATABASE_URL=sqlite:///./notes.db
+
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+CORS_ORIGINS=["http://localhost:3000","http://localhost:3002"]
+DEFAULT_PAGE_SIZE=20
+MAX_PAGE_SIZE=100
+```
+
+### **Lancement**
+
+```bash
+# Mode développement avec rechargement automatique
+uvicorn main:app --reload
+
+# Mode production
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+L'API sera disponible sur : **http://localhost:8000**
+
+---
+
+##  **Base de données**
+
+### **Modèles principaux**
+
+#### ** Utilisateur**
+```python
+- id: int (PK)
+- email: str (unique)
+- mot_de_passe: str (hashé)
+- nom: str
+- date_creation: datetime
+```
+
+#### ** Note**
+```python
+- id: int (PK)
+- titre: str
+- contenu: str (Markdown)
+- visibilite: enum ['prive', 'partage', 'public']
+- token_publique: str (UUID)
+- owner_id: int (FK → User)
+- date_creation: datetime
+- date_modification: datetime
+- tags: List[Tag] (Many-to-Many)
+```
+
+#### ** Tag**
+```python
+- id: int (PK)
+- nom: str (unique)
+- couleur: str (hex)
+- notes: List[Note] (Many-to-Many)
+```
+
+#### ** PartageNote**
+```python
+- id: int (PK)
+- note_id: int (FK → Note)
+- utilisateur_id: int (FK → User, propriétaire)
+- partage_avec_utilisateur_id: int (FK → User, destinataire)
+- permission: enum ['read', 'write']
+- date_partage: datetime
+```
+
+---
+
+##  **API Endpoints**
+
+### ** Authentification**
+```
+POST   /api/v1/auth/register     # Inscription
+POST   /api/v1/auth/login        # Connexion → JWT token
+GET    /api/v1/auth/me           # Profil utilisateur
+```
+
+### ** Gestion des notes**
+```
+GET    /api/v1/notes/notes/           # Lister mes notes
+POST   /api/v1/notes/notes/           # Créer une note
+GET    /api/v1/notes/notes/{id}       # Récupérer une note
+PUT    /api/v1/notes/notes/{id}       # Modifier une note
+DELETE /api/v1/notes/notes/{id}       # Supprimer une note
+```
+
+### ** Partage et collaboration**
+```
+GET    /api/v1/sharing/my-accessible-notes          # Mes notes + partagées
+GET    /api/v1/sharing/shared-with-me               # Notes partagées avec moi
+POST   /api/v1/sharing/{note_id}/share/{email}      # Partager avec utilisateur
+DELETE /api/v1/sharing/notes/{note_id}/share/{email} # Arrêter partage
+GET    /api/v1/sharing/notes/{note_id}/shared-with   # Voir partages d'une note
+```
+
+### ** Liens publics**
+```
+POST   /api/v1/sharing/notes/{note_id}/public-link   # Créer lien public
+DELETE /api/v1/sharing/notes/{note_id}/public-link   # Révoquer lien public
+GET    /api/v1/sharing/public/{token}                # Accéder note publique
+```
+
+### ** Recherche**
+```
+GET    /api/v1/notes/notes/search/?query=markdown   # Recherche full-text
+GET    /api/v1/search/tags?tag=travail               # Filtrage par tag
+```
+
+---
+
+##  **Format des réponses**
+
+### ** Succès**
+```json
+{
+    "status": "success",
+    "code": "OPERATION_SUCCESS",
+    "message": "Opération réussie",
+    "data": {
+        "id": 1,
+        "titre": "Ma note",
+        "contenu": "# Contenu markdown"
+    }
+}
+```
+
+### ** Erreur**
+```json
+{
+    "status": "error",
+    "code": "ERROR_CODE",
+    "message": "Description de l'erreur",
+    "data": {
+        "action": "operation_name",
+        "error_details": "Détails techniques"
+    }
+}
+```
+
+---
+
+##  **Tests et développement**
+
+### **Documentation interactive**
+- **Swagger UI** : http://localhost:8000/docs
+- **ReDoc** : http://localhost:8000/redoc
+
+### **Endpoints de test**
+```bash
+# Test de santé
+curl http://localhost:8000/health
+
+# Test de connexion DB
+curl http://localhost:8000/api/v1/sharing/test-db
+```
+
+### **Collection Postman**
+Une collection Postman complète est fournie avec :
+-  Tous les endpoints documentés
+-  Exemples de données
+-  Auto-sauvegarde du token JWT
+-  Tests de cas d'usage complets
+
+---
+
+##  **Sécurité**
+
+- **JWT tokens** avec expiration configurable
+- **Hashage bcrypt** pour les mots de passe
+- **CORS** configuré pour les domaines autorisés
+- **Validation** stricte des données d'entrée
+- **Isolation** : chaque utilisateur voit seulement ses données
+- **Tokens UUID** pour les liens publics
+
+---
+
+##  **Optimisations**
+
+### **Base de données**
+- **Joinedload** pour éviter les requêtes N+1
+- **Index** sur `owner_id`, `email`, `token_publique`
+- **Pagination** native avec `skip`/`limit`
+
+### **Requêtes optimisées**
+- **UNION queries** pour combiner notes créées/partagées
+- **Lazy loading** intelligent pour les relations
+- **Cache** des permissions utilisateur
+
+---
+
+##  **Configuration avancée**
+
+### **Variables d'environnement**
+```env
+# Debug et logging
+DEBUG=true
+LOG_LEVEL=info
+
+# Base de données
+DATABASE_URL=sqlite:///./notes.db
+# ou PostgreSQL: postgresql://user:pass@localhost/dbname
+
+# JWT
+SECRET_KEY=your-super-secret-key
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS
+CORS_ORIGINS=["http://localhost:3000","https://myapp.com"]
+
+# Pagination
+DEFAULT_PAGE_SIZE=20
+MAX_PAGE_SIZE=100
+```
+
+### **Déploiement production**
+```bash
+# Variables d'environnement production
+export DEBUG=false
+export ENVIRONMENT=production
+export DATABASE_URL="postgresql://..."
+
+# Lancement avec Gunicorn
+pip install gunicorn
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
+```
+
+---
+
+##  **Monitoring et logs**
+
+### **Health checks**
+```bash
+GET /health              # Santé générale de l'API
+GET /api/v1/sharing/test-db  # Test connexion base de données
+```
+
+### **Logs structurés**
+- Toutes les erreurs sont loggées avec contexte
+- Trace des opérations de partage
+- Monitoring des performances des requêtes
+
+---
+
+##  **Contribution**
+
+### **Standards de code**
+- **PEP 8** pour le style Python
+- **Type hints** obligatoires
+- **Docstrings** pour toutes les fonctions publiques
+- **Tests unitaires** pour la logique métier
+
+### **Structure des commits**
+```
+feat: ajouter endpoint de recherche par tag
+fix: corriger pagination dans get_user_notes
+docs: mettre à jour README API
+```
+
+---
+
+##  **Technologies utilisées**
+
+- **[FastAPI](https://fastapi.tiangolo.com/)** - Framework web moderne
+- **[SQLAlchemy](https://www.sqlalchemy.org/)** - ORM Python
+- **[Pydantic](https://pydantic-docs.helpmanual.io/)** - Validation des données
+- **[JWT](https://pyjwt.readthedocs.io/)** - Authentification stateless
+- **[Bcrypt](https://pypi.org/project/bcrypt/)** - Hashage de mots de passe
+- **[SQLite](https://www.sqlite.org/)** - Base de données (dev)
+
+---
+
+##  **Changelog**
+
+### **v1.0.0** (2025-01-XX)
+-  Authentification JWT complète
+-  CRUD notes avec tags
+-  Système de partage privé
+-  Liens publics UUID
+-  Recherche full-text
+-  API REST complète avec documentation
+
+---
+
+##  **Support**
+
+- **Documentation** : `/docs` (Swagger UI)
+- **Issues** : Créer une issue sur le repository
+- **API Reference** : Voir collection Postman fournie
+
+---
+
+** Cette API est prête pour la production et peut gérer des milliers d'utilisateurs avec leurs notes et

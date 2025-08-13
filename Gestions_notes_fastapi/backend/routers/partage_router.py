@@ -65,10 +65,10 @@ def unshare_note_with_user(
             detail=error_message
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Debug
+        print(f"Unexpected error: {e}")  
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne du serveur"
+            detail=SERVER_ERROR_MESSAGE
         )
 
 @router.get("/notes/{note_id}/shared-with", response_model=List[dict])
@@ -82,12 +82,11 @@ def get_note_shares(
         shares = sharing_service.get_note_shares(note_id, current_user.id)
         return shares
     except (NotFoundException, ValidationException) as e:
-        # Extraction du message
         error_message = str(e)
         if isinstance(e.args[0], dict) and 'message' in e.args[0]:
             error_message = e.args[0]['message']
         
-        print(f"Error details: {e}")  # Debug
+        print(f"Error details: {e}")  
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND if isinstance(e, NotFoundException) else status.HTTP_400_BAD_REQUEST,
             detail=error_message
@@ -96,7 +95,7 @@ def get_note_shares(
         print(f"Unexpected error: {e}")  
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne du serveur"
+            detail=SERVER_ERROR_MESSAGE
         )
 
 @router.post("/notes/{note_id}/public-link", response_model=dict)
@@ -111,21 +110,20 @@ def create_public_link(
         result = sharing_service.create_public_link(note_id, current_user.id)
         return result
     except (NotFoundException, ValidationException) as e:
-        # Extraction du message
         error_message = str(e)
         if isinstance(e.args[0], dict) and 'message' in e.args[0]:
             error_message = e.args[0]['message']
         
-        print(f"Error details: {e}")  # Debug
+        print(f"Error details: {e}")  
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND if isinstance(e, NotFoundException) else status.HTTP_400_BAD_REQUEST,
             detail=error_message
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Debug
+        print(f"Unexpected error: {e}")  
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne du serveur"
+            detail=SERVER_ERROR_MESSAGE
         )
 
 @router.delete("/notes/{note_id}/public-link")
@@ -139,24 +137,22 @@ def revoke_public_link(
         result = sharing_service.revoke_public_link(note_id, current_user.id)
         return result
     except (NotFoundException, ValidationException) as e:
-        # Extraction du message
         error_message = str(e)
         if isinstance(e.args[0], dict) and 'message' in e.args[0]:
             error_message = e.args[0]['message']
         
-        print(f"Error details: {e}")  # Debug
+        print(f"Error details: {e}") 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND if isinstance(e, NotFoundException) else status.HTTP_400_BAD_REQUEST,
             detail=error_message
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Debug
+        print(f"Unexpected error: {e}") 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne du serveur"
+            detail=SERVER_ERROR_MESSAGE
         )
 
-# Route publique (pas d'authentification requise)
 @router.get("/public/{token}", response_model=NoteResponse)
 def get_public_note(
     token: str,
@@ -177,16 +173,16 @@ def get_public_note(
         if isinstance(e.args[0], dict) and 'message' in e.args[0]:
             error_message = e.args[0]['message']
         
-        print(f"Error details: {e}")  # Debug
+        print(f"Error details: {e}")  
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND if isinstance(e, NotFoundException) else status.HTTP_400_BAD_REQUEST,
             detail=error_message
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")  # Debug
+        print(f"Unexpected error: {e}")  
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erreur interne du serveur"
+            detail=SERVER_ERROR_MESSAGE
         )
 
 @router.get("/test-db")
