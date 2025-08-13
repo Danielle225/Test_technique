@@ -1,7 +1,10 @@
 {
   "name": "notes-app",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Application moderne de gestion de notes avec Next.js et FastAPI",
+  "author": "Danielle225",
   "private": true,
+  "keywords": ["nextjs", "typescript", "notes", "fastapi", "tailwind", "radix-ui"],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
