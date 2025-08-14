@@ -95,15 +95,7 @@ export default function LoginPage() {
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
 
-            {/* Bouton de debug pour nettoyer le localStorage */}
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full" 
-              onClick={clearStorage}
-            >
-              🧹 Nettoyer le cache (Debug)
-            </Button>
+          
           </form>
 
           <div className="mt-6 text-center">

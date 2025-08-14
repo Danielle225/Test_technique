@@ -57,7 +57,7 @@ backend/
 │   └── note_schema.py        # Schémas de notes
 │
 └── services/
-    ├── auth_service.py       # Logique métier auth
+    ├── auth_service.py       
     ├── note_service.py       # Logique métier notes
     └── partage_service.py    # Logique métier partage
 ```
