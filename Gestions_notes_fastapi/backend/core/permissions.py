@@ -9,29 +9,27 @@ class PermissionChecker:
     def __init__(self, db: Session):
         self.db = db
 
+    def user_by_id(self, user_id: int) -> Optional[Utilisateur]:
+        user = self.db.query(Utilisateur).filter(Utilisateur.id == user_id).first()
+        if not user:
+            return None
+        return user
+
     def can_read_note(self, user: Utilisateur, note: Note) -> bool:
         if note.owner_id == user.id:
             return True
 
         shared = self.db.query(PartageNote).filter(
             PartageNote.note_id == note.id,
-            PartageNote.partage_par_utilisateur_id == user.id,
-            PartageNote.can_read == True
+            PartageNote.partage_avec_utilisateur_id == user.id,
+            PartageNote.permission == "read"
         ).first()
     
         return shared 
 
     def can_edit_note(self, user: Utilisateur, note: Note) -> bool:
-        if note.owner_id == user.id:
-            return True
 
-        shared = self.db.query(PartageNote).filter(
-            PartageNote.note_id == note.id,
-            PartageNote.partage_par_utilisateur_id == user.id,
-            PartageNote.can_edit == True
-        ).first()
-    
-        return shared is not None
+        return note.owner_id == user.id
 
     def can_delete_note(self, user: Utilisateur, note: Note) -> bool:
         return note.owner_id == user.id

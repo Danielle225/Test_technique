@@ -16,7 +16,7 @@ class Note(Base):
     date_creation = Column(DateTime(timezone=True), server_default=func.now())
     date_modification = Column(DateTime(timezone=True), onupdate=func.now())
     visibilite = Column(String(50), default="prive")  
-    token_publique = Column(String(255), nullable=True)  # Token pour les notes publiques
+    token_publique = Column(String(255), nullable=True) 
 
     owner = relationship("Utilisateur", back_populates="notes")
     partages = relationship("PartageNote", back_populates="note", cascade="all, delete-orphan")

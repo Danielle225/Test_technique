@@ -1,4 +1,5 @@
 from typing import List, Optional
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.exceptions import NotFoundException
@@ -46,8 +47,14 @@ class NoteService:
         return self.note_repository.get_user_notes(utilisateur_id, skip, limit)
 
     def get_note_by_id(self, note_id: int, utilisateur_id: int) -> Note:
+        print(f"DEBUG: Getting note {note_id} for user {utilisateur_id}")
+        note = self.note_repository.get_user_note_by_id(note_id, utilisateur_id) or self.note_repository.get_shared_with_user(utilisateur_id)
+        if self.note_repository.get_shared_note_by_id(note_id, utilisateur_id):
+            print(f"DEBUG: Note {note_id} found in shared notes for user {utilisateur_id}")
+            return note[0]  # Assuming this returns a list, we take the first item
         
-        note = self.note_repository.get_user_note_by_id(note_id, utilisateur_id)
+        else:
+            note = self.note_repository.get_user_note_by_id(note_id, utilisateur_id)
         if not note:
             raise NotFoundException("Note non trouvée")
         return note
@@ -55,6 +62,11 @@ class NoteService:
     def update_note(self, note_id: int, note_data: NoteUpdate, utilisateur_id: int) -> Note:
         
         note = self.get_note_by_id(note_id, utilisateur_id)
+        user = self.permissions.user_by_id(utilisateur_id)
+        if not self.permissions.can_edit_note(user, note):
+            print("DEBUG: User does not have permission to edit this note")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous n'avez pas la permission de modifier cette note")
+        print(f"DEBUG: Updating note {note_id} for user {utilisateur_id}")
         
         if note_data.titre is not None:
             note.titre = note_data.titre

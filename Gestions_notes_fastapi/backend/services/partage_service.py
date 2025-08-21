@@ -78,6 +78,8 @@ class PartageService:
             })
 
         try:
+            note = self.note_repo.get_user_note_by_id(note_id, owner_id)
+            note.visibilite = "partage"
             shared_note = PartageNote(
                 note_id=note_id,
                 utilisateur_id=owner_id,

@@ -104,7 +104,10 @@ def get_note(
     """Récupérer une note spécifique"""
     try:
         note_service = NoteService(db)
+        print(f"DEBUG: from route note {note_id} for user {current_user.id}")
         note = note_service.get_note_by_id(note_id, current_user.id)
+        print(f"DEBUG: Retrieved note {note_id} for user {current_user.id}")
+        print(type(note))  # DEBUG: Check type of note
         return note
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -98,9 +98,18 @@ class NoteRepository(BaseRepository[Note, NoteCreate, NoteUpdate]):
             self.db.query(Note)
             .options(joinedload(Note.tags))
             .join(PartageNote)
-            .filter(PartageNote.partage_avec_utilisateur == utilisateur_id)
+            .filter(PartageNote.partage_avec_utilisateur.has(id=utilisateur_id))
             .order_by(Note.date_modification.desc())
             .offset(skip)
             .limit(limit)
-            .all()
+            .all()     
         )
+        
+    def get_shared_note_by_id(self, note_id: int, utilisateur_id: int) -> Optional[Note]:
+        return (
+            self.db.query(Note)
+            .options(joinedload(Note.tags))
+            .join(PartageNote)
+            .filter(and_(Note.id == note_id, PartageNote.partage_avec_utilisateur.has(id=utilisateur_id)))
+            .first()
+        )    
