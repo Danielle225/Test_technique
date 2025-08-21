@@ -35,10 +35,6 @@ export default function LoginPage() {
     }
   }
 
-  const clearStorage = () => {
-    localStorage.clear()
-    window.location.reload()
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -91,15 +87,7 @@ export default function LoginPage() {
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
 
-            {/* Bouton de debug pour nettoyer le localStorage */}
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full" 
-              onClick={clearStorage}
-            >
-              🧹 Nettoyer le cache (Debug)
-            </Button>
+           
           </form>
 
           <div className="mt-6 text-center">

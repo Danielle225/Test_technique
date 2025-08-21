@@ -27,10 +27,11 @@ export interface AuthContextType {
   logout: () => Promise<void>
   loading: boolean
 }
-export interface Tag{
-    id: string
-    nom: string
+export interface Tag {
+  id: string
+  nom: string
 }
+
 // Types pour les notes
 export interface Note {
   id: string

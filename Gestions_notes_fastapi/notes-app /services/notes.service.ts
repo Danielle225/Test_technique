@@ -16,7 +16,7 @@ export class NotesService {
       titre: noteData.titre,
       contenu: noteData.contenu,
       visibilite: noteData.visibilite,
-      tags: noteData.tags,
+      tags: noteData.tags.map(tag => tag.nom),
     })
   }
 

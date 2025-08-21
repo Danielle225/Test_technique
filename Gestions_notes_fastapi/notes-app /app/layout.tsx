@@ -8,6 +8,7 @@ import { ToastContainer } from "@/components/ToastContainer"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { DebugComponent } from "@/components/DebugComponent"
 import { ReactDebugger } from "@/components/ReactDebugger"
+import {IsAuthenticated} from "@/lib/auth_check"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={inter.className}>
+        
         <ErrorBoundary>
           <ReactDebugger />
           <DebugComponent />
@@ -35,6 +37,7 @@ export default function RootLayout({
             </ToastProvider>
           </AuthProvider>
         </ErrorBoundary>
+        
       </body>
     </html>
   )
