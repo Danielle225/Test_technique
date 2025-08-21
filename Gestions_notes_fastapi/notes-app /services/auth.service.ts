@@ -33,7 +33,7 @@ export class AuthService {
         email: email,
       }
       
-      console.log("✅ Nouvel utilisateur créé:", user)
+      // console.log("✅ Nouvel utilisateur créé:", user)
       AuthStorage.setUser(user)
 
       return {

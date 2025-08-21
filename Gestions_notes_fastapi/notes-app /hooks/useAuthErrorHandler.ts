@@ -17,8 +17,9 @@ export function useAuthErrorHandler() {
       try {
         const response = await originalFetch(...args)
         
+        // 🔧 Ne gérer QUE les erreurs d'authentification
         if (response.status === 401) {
-          console.log("🔒 Erreur 401 interceptée - Déconnexion automatique")
+          console.log("🔒 Session expirée - Déconnexion automatique")
           
           addToast({
             type: "avertissement",
@@ -29,7 +30,15 @@ export function useAuthErrorHandler() {
           
           setTimeout(() => {
             router.push("/login")
-          }, 2000)
+          }, 1500)
+        }
+        
+        // 🔧 403 - Accès refusé
+        if (response.status === 403) {
+          addToast({
+            type: "erreur",
+            message: "Accès refusé. Vous n'avez pas les permissions nécessaires.",
+          })
         }
         
         return response

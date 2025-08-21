@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import type { User, AuthContextType } from "../types"
 import { AuthService } from "../services/auth.service"
 import { AuthStorage } from "../lib/auth-storage"
+import { useRouter } from "next/navigation"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -15,6 +16,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     initializeAuth()
@@ -30,7 +32,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (storedToken && storedUser) {
         setToken(storedToken)
         setUser(storedUser)
-      } else {
       }
     } catch (error) {
       AuthStorage.clearAll()
@@ -48,13 +49,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email: String(response.user?.email || email),
       }
       
-      
       AuthStorage.setToken(response.token)
       AuthStorage.setUser(safeUser)
       
       setUser(safeUser)
       setToken(response.token)
       
+      // 🔧 Redirection immédiate dans le contexte
+      console.log("✅ Login terminé, redirection immédiate")
+      window.location.href = '/dashboard'
+      
+      return safeUser
+
     } catch (error) {
       throw error
     }
@@ -68,6 +74,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       AuthStorage.clearAll()
       setUser(null)
       setToken(null)
+      router.push('/login')
     }
   }
 

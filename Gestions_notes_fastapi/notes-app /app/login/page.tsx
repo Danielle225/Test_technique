@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
@@ -18,18 +18,37 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, user } = useAuth()
   const { addToast } = useToast()
   const router = useRouter()
+
+  // 🔧 Plus de redirection ici, c'est géré dans AuthContext
+  // useEffect(() => {
+  //   if (user && !loading) {
+  //     console.log("🚀 Utilisateur connecté détecté, redirection FORCÉE vers /dashboard")
+  //     console.log("👤 Utilisateur:", user)
+  //     console.log("📍 URL actuelle:", window.location.pathname)
+      
+  //     // 🔧 Redirection immédiate et forcée
+  //     window.location.href = '/dashboard'
+  //   }
+  // }, [user, loading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      await login(email, password)
-      router.push("/dashboard")
+      const loggedUser = await login(email, password)
+      console.log("✅ Utilisateur connecté:", loggedUser)
+      
+      addToast({
+        type: "reussi",
+        message: "Connexion réussie ! Redirection en cours...",
+      })
+      
     } catch (error) {
+      console.error("❌ Erreur de connexion:", error)
       addToast({
         type: "erreur",
         message: getApiErrorMessage(error as any, "Erreur de connexion"),
@@ -41,7 +60,14 @@ export default function LoginPage() {
 
   const clearStorage = () => {
     localStorage.clear()
-    window.location.reload()
+    sessionStorage.clear()
+    addToast({
+      type: "info",
+      message: "Stockage vidé, page rechargée.",
+    })
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
   }
 
   return (
@@ -94,9 +120,37 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
-
-          
           </form>
+
+          {/* 🔧 Bouton de redirection manuelle si bloqué */}
+          {user && (
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
+              <p className="text-green-700 text-sm mb-2">
+                ✅ Connexion réussie ! Si la redirection ne fonctionne pas :
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/dashboard'} 
+                className="w-full"
+                variant="outline"
+              >
+                🚀 Aller au Dashboard
+              </Button>
+            </div>
+          )}
+
+          {/* 🔧 Bouton de debug optionnel */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 pt-4 border-t">
+              <Button 
+                onClick={clearStorage} 
+                variant="outline" 
+                size="sm" 
+                className="w-full"
+              >
+                🔧 Vider le cache (Debug)
+              </Button>
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
